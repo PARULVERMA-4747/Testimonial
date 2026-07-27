@@ -1,10 +1,30 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 
+const STORAGE_KEY = 'saleshandy-testimonials'
 const API_BASE = import.meta.env.PROD
-  ? window.location.origin
+  ? (import.meta.env.VITE_API_URL || 'https://saleshandy.onrender.com')
   : (import.meta.env.VITE_API_URL || 'http://localhost:3001')
 const API = `${API_BASE}/api/testimonials`
+
+const readLocalTestimonials = () => {
+  if (typeof window === 'undefined') {
+    return []
+  }
+
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
+
+const writeLocalTestimonials = (items) => {
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+  }
+}
 
 function App() {
   const [form, setForm] = useState({
@@ -33,7 +53,12 @@ function App() {
       setApproved(approvedData)
     } catch (error) {
       console.error(error)
-      setMessage('Unable to load testimonials right now.')
+      const localTestimonials = readLocalTestimonials()
+      setPending(localTestimonials.filter((item) => item.status === 'pending'))
+      setApproved(localTestimonials.filter((item) => item.status === 'approved'))
+      setMessage(localTestimonials.length > 0
+        ? 'The live API is unavailable, so your submissions are shown from local storage for now.'
+        : 'Unable to load testimonials right now.')
     } finally {
       setLoading(false)
     }
@@ -63,7 +88,21 @@ function App() {
       setMessage('Thanks! Your testimonial is waiting for approval.')
       refreshTestimonials()
     } else {
-      setMessage('We could not save that testimonial. Please try again.')
+      const testimonial = {
+        id: `local-${Date.now()}`,
+        ...form,
+        company: form.company || 'Independent customer',
+        rating: Number(form.rating),
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      const nextTestimonials = [testimonial, ...readLocalTestimonials()]
+      writeLocalTestimonials(nextTestimonials)
+      setPending(nextTestimonials.filter((item) => item.status === 'pending'))
+      setApproved(nextTestimonials.filter((item) => item.status === 'approved'))
+      setForm({ name: '', email: '', company: '', message: '', rating: '5' })
+      setMessage('Saved locally because the live API is currently unavailable.')
     }
   }
 
@@ -76,7 +115,16 @@ function App() {
 
     if (response.ok) {
       refreshTestimonials()
+      return
     }
+
+    const nextTestimonials = readLocalTestimonials().map((item) => (
+      String(item.id) === String(id) ? { ...item, status: nextStatus } : item
+    ))
+    writeLocalTestimonials(nextTestimonials)
+    setPending(nextTestimonials.filter((item) => item.status === 'pending'))
+    setApproved(nextTestimonials.filter((item) => item.status === 'approved'))
+    setMessage('Updated locally because the live API is currently unavailable.')
   }
 
   const summary = useMemo(() => ({
