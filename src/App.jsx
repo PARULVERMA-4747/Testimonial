@@ -272,7 +272,7 @@ function App() {
       <section className="panel wall-panel">
         <div className="panel-header">
           <h2>Public wall</h2>
-          <a href="/widget-demo.html" target="_blank" rel="noreferrer">Open widget demo</a>
+          <a href="./widget-demo.html" target="_blank" rel="noreferrer">Open widget demo</a>
         </div>
         <div className="wall-grid">
           {approved.map((item) => (
