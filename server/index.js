@@ -20,6 +20,8 @@ app.use(express.urlencoded({ extended: true }))
 
 const upload = multer({ dest: path.join(__dirname, '..', 'uploads') })
 
+app.use(express.static(path.join(__dirname, '..', 'dist')))
+
 app.get('/health', (_req, res) => {
   res.json({ ok: true })
 })
@@ -88,6 +90,14 @@ app.get('/widget', (_req, res) => {
   </body>
 </html>`
   res.send(html)
+})
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/') || req.path === '/health') {
+    return next()
+  }
+
+  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'))
 })
 
 await initializeDatabase()

@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 
-const API = 'http://localhost:3001/api/testimonials'
+const API_BASE = import.meta.env.PROD
+  ? window.location.origin
+  : (import.meta.env.VITE_API_URL || 'http://localhost:3001')
+const API = `${API_BASE}/api/testimonials`
 
 function App() {
   const [form, setForm] = useState({
