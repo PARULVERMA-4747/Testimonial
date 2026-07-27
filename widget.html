@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Widget</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+  </head>
+  <body style="margin:0;font-family:Inter,system-ui,sans-serif;background:#f8fafc;">
+    <div style="padding:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="margin:0;color:#111827;">Loved by customers</h3>
+        <span id="view" style="color:#2563eb;font-weight:600;">Grid view</span>
+      </div>
+      <div id="grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+      </div>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(location.search);
+      const accent = params.get('accent') || '#2563eb';
+      const layout = params.get('layout') || 'grid';
+      document.getElementById('view').textContent = layout === 'grid' ? 'Grid view' : 'List view';
+
+      // Try to read testimonials from localStorage (same origin when hosted on GitHub Pages)
+      let stored = [];
+      try {
+        const raw = localStorage.getItem('saleshandy-testimonials')
+        stored = raw ? JSON.parse(raw) : []
+      } catch (e) {
+        stored = []
+      }
+
+      const show = params.get('show') || 'all' // 'approved' | 'pending' | 'all'
+      let items = []
+
+      if (Array.isArray(stored) && stored.length > 0) {
+        if (show === 'approved') items = stored.filter((t) => t.status === 'approved')
+        else if (show === 'pending') items = stored.filter((t) => t.status === 'pending')
+        else items = stored.slice().reverse()
+      }
+
+      // Fallback static messages if no stored items
+      if (items.length === 0) {
+        items = [
+          { message: 'A polished experience from start to finish.', name: 'Happy Client', rating: 5, company: '' },
+          { message: 'The process felt professional and effortless.', name: 'Happy Client', rating: 5, company: '' },
+          { message: 'We saw results quickly.', name: 'Happy Client', rating: 5, company: '' },
+        ]
+      }
+
+      const container = document.getElementById('grid')
+      container.style.gridTemplateColumns = layout === 'grid' ? 'repeat(auto-fit,minmax(220px,1fr))' : '1fr'
+
+      items.forEach((item) => {
+        const el = document.createElement('div')
+        el.style.background = 'white'
+        el.style.border = '1px solid #e2e8f0'
+        el.style.borderRadius = '16px'
+        el.style.padding = '16px'
+        el.style.boxShadow = '0 10px 30px rgba(15,23,42,0.04)'
+        const stars = '★'.repeat(Number(item.rating) || 5)
+        el.innerHTML = `
+          <div style="color:${accent};font-size:18px;">${stars}</div>
+          <p style="margin:10px 0;color:#334155;">“${item.message}”</p>
+          <strong style="color:#0f172a;">${item.name || 'Customer'}</strong>
+          <div style="color:#64748b;font-size:13px;margin-top:6px;">${item.company || ''}</div>
+        `
+        container.appendChild(el)
+      })
+    </script>
+  </body>
+</html>
