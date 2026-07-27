@@ -40,3 +40,4 @@ A lightweight testimonial platform with a public submission form, moderation das
 2. Create a new Render web service from the repository.
 3. Render will use the included configuration to install dependencies, build the app, and run the Express server.
 4. Open the generated Render URL and use it as the live backend for the hosted frontend.
+5. If needed, set the frontend environment variable `VITE_API_URL` to the Render URL.
