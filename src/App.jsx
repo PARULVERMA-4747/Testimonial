@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 
 const STORAGE_KEY = 'saleshandy-testimonials'
-const API_BASE = import.meta.env.PROD
-  ? (import.meta.env.VITE_API_URL || 'https://testimonial-backend.vercel.app')
-  : (import.meta.env.VITE_API_URL || 'http://localhost:3001')
-const API = `${API_BASE}/api/testimonials`
+const API_BASE = import.meta.env.DEV
+  ? (import.meta.env.VITE_API_URL || 'http://localhost:3001')
+  : ''
+const API = import.meta.env.DEV ? `${API_BASE}/api/testimonials` : null
 
 const readLocalTestimonials = () => {
   if (typeof window === 'undefined') {
@@ -42,6 +42,18 @@ function App() {
 
   const refreshTestimonials = async () => {
     setLoading(true)
+
+    if (!API) {
+      const localTestimonials = readLocalTestimonials()
+      setPending(localTestimonials.filter((item) => item.status === 'pending'))
+      setApproved(localTestimonials.filter((item) => item.status === 'approved'))
+      setMessage(localTestimonials.length > 0
+        ? 'Submissions are stored in this browser for the hosted version of the site.'
+        : 'No testimonials yet. Submit one to see it appear here.')
+      setLoading(false)
+      return
+    }
+
     try {
       const [pendingRes, approvedRes] = await Promise.all([
         fetch(`${API}?status=pending&limit=10&offset=0`),
@@ -77,6 +89,25 @@ function App() {
     event.preventDefault()
     setMessage('')
 
+    if (!API) {
+      const testimonial = {
+        id: `local-${Date.now()}`,
+        ...form,
+        company: form.company || 'Independent customer',
+        rating: Number(form.rating),
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      const nextTestimonials = [testimonial, ...readLocalTestimonials()]
+      writeLocalTestimonials(nextTestimonials)
+      setPending(nextTestimonials.filter((item) => item.status === 'pending'))
+      setApproved(nextTestimonials.filter((item) => item.status === 'approved'))
+      setForm({ name: '', email: '', company: '', message: '', rating: '5' })
+      setMessage('Saved locally in this browser. It will appear in the moderation dashboard immediately.')
+      return
+    }
+
     const response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -107,6 +138,17 @@ function App() {
   }
 
   const handleReview = async (id, nextStatus) => {
+    if (!API) {
+      const nextTestimonials = readLocalTestimonials().map((item) => (
+        String(item.id) === String(id) ? { ...item, status: nextStatus } : item
+      ))
+      writeLocalTestimonials(nextTestimonials)
+      setPending(nextTestimonials.filter((item) => item.status === 'pending'))
+      setApproved(nextTestimonials.filter((item) => item.status === 'approved'))
+      setMessage('Updated locally in this browser.')
+      return
+    }
+
     const response = await fetch(`${API}/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
