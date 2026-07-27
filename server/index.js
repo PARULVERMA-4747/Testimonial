@@ -92,11 +92,7 @@ app.get('/widget', (_req, res) => {
   res.send(html)
 })
 
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api/') || req.path === '/health') {
-    return next()
-  }
-
+app.get(/^(?!\/api\/|\/health).*/, (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'))
 })
 
