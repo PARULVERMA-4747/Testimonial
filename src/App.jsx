@@ -3,7 +3,7 @@ import './App.css'
 
 const STORAGE_KEY = 'saleshandy-testimonials'
 const API_BASE = import.meta.env.PROD
-  ? (import.meta.env.VITE_API_URL || 'https://saleshandy.onrender.com')
+  ? (import.meta.env.VITE_API_URL || 'https://saleshandy-api.onrender.com')
   : (import.meta.env.VITE_API_URL || 'http://localhost:3001')
 const API = `${API_BASE}/api/testimonials`
 
