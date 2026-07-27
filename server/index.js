@@ -13,8 +13,25 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 const port = process.env.PORT || 3001
+const allowedOrigins = [
+  'https://parulverma-4747.github.io',
+  'http://localhost:5173',
+  'http://localhost:3001',
+]
 
-app.use(cors())
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+      return
+    }
+
+    callback(new Error(`Origin not allowed: ${origin}`))
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
